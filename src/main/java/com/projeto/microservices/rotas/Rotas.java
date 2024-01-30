@@ -31,14 +31,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 // Feriados
 import java.util.Date;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import com.projeto.microservices.entidades.Lista;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,7 +48,6 @@ public class Rotas {
 
     private final RedisTemplate<String, String> redisTemplate;
 
-    @Autowired
     public Rotas(RedisTemplate<String, String> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
@@ -352,15 +345,17 @@ public class Rotas {
             lay.setIndicador(token.substring(30, 31)); 
              
             if(lay.getIndicador().equals("2")){ 
+ 
                 if(token.length() == 39){
 
                     //123456789123412123456789123412212345678 
-
+                    
                     lay.setCodigoProduto(token.substring(31, 39)); 
                     return ResponseEntity.ok(lay.toString()); 
                 }
                 else{
-                    return ResponseEntity.ok("Erro");  
+                    int aux = token.length();
+                    return ResponseEntity.ok("Erro" + aux + ": "+token.substring(0, 39));  
                 }
                 
             }else{ 
