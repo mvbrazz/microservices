@@ -336,5 +336,61 @@ public class Rotas {
             .body(pdfContents);
     }
 
+    @GetMapping(value = "/layout/{token}")
+    public ResponseEntity<String>validaLayout(@PathVariable String token){ 
+        if(token.length() >= 31){
+            
+            String CNPJ = token.substring(0,9); 
+            String filialPublico = token.substring(9, 13); 
+            String digitoCNPJ = token.substring(13, 15); 
+            String CNPJeconomico = token.substring(15, 24); 
+            String filialEconomico = token.substring(24, 28); 
+            String digitoCNPJeconomico = token.substring(28, 30); 
+            String indicador = token.substring(30, 31); 
+            String codigoProduto = ""; 
+            if(indicador.equals(2)){ 
+                if(token.length() == 39){
+                    codigoProduto = token.substring(31, 39); 
+                    return ResponseEntity.ok("certo"); 
+                }
+                else{
+                    return ResponseEntity.ok("errado");  
+                }
+                
+            }else{ 
+                
+                //12345678912341212345678912341212310202423102025231020262310202712345678
+
+                String dataInicio = token.substring(31, 33)+"-"+ token.substring(33, 35)+"-"+ token.substring(35, 39); 
+        
+                String dataFim = token.substring(39, 41)+"-"+ token.substring(41, 43)+"-"+ token.substring(43, 47); 
+             
+                String dataAss = token.substring(47, 49)+"-"+ token.substring(49, 51)+"-"+ token.substring(51, 55); 
+               
+                String dataLici = token.substring(55, 57)+"-"+ token.substring(57, 59)+"-"+ token.substring(59, 63); 
+               
+                String vet [] = {validaData(dataInicio).getBody().split(",")[0],validaData(dataFim).getBody().split(",")[0],
+                    validaData(dataAss).getBody().split(",")[0],validaData(dataLici).getBody().split(",")[0]};
+                
+                int invalid = 0;    
+
+                for (String str : vet) {
+                    if (str.equals("Data Inválida")) {
+                        invalid++;
+                    } 
+                }
+ 
+                if(invalid == 0){
+                    codigoProduto = token.substring(63, 71);
+                    return ResponseEntity.ok("Valida");     
+                }else{
+                    return ResponseEntity.ok("Invalida");    
+                }
+
+            }
+        }else{ 
+            return ResponseEntity.ok("Tamanho incorreto"); 
+        }
+    }
 }
 
