@@ -3,11 +3,14 @@ package com.projeto.microservices.metodos;
 import java.util.Map;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.time.ZoneOffset;
 import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import com.projeto.microservices.entidades.Endereco;
+import com.projeto.microservices.entidades.Lista;
+
 import org.springframework.beans.factory.annotation.Autowired;
 
 //JWT
@@ -108,7 +111,28 @@ public class Metodos {
         return outputStream.toByteArray();
     }
 
+    // Gera Lista de feriados PDF
+
+    public byte[] generatePDFList(List<Lista> dados) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     
+        try (PdfWriter writer = new PdfWriter(outputStream);
+             PdfDocument pdf = new PdfDocument(writer);
+             Document document = new Document(pdf)) {
+    
+            // Adiciona cada item da lista como um parágrafo no PDF
+            for (Lista item : dados) {
+                // Substitua "getCampoDesejado()" pelo método ou campo desejado da classe Lista
+                document.add(new Paragraph(item.getChave()+": "+item.getValor()));
+            }
+    
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    
+        return outputStream.toByteArray();
+    }
+
 
     
     
