@@ -5,7 +5,7 @@ package com.projeto.microservices.rotas;
 import org.springframework.http.ResponseEntity;
 import com.projeto.microservices.metodos.Metodos;
 import com.projeto.microservices.entidades.Endereco;
-
+import com.projeto.microservices.entidades.Layout;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -338,39 +338,45 @@ public class Rotas {
 
     @GetMapping(value = "/layout/{token}")
     public ResponseEntity<String>validaLayout(@PathVariable String token){ 
+
+        Layout lay = new Layout();
+
         if(token.length() >= 31){
-            
-            String CNPJ = token.substring(0,9); 
-            String filialPublico = token.substring(9, 13); 
-            String digitoCNPJ = token.substring(13, 15); 
-            String CNPJeconomico = token.substring(15, 24); 
-            String filialEconomico = token.substring(24, 28); 
-            String digitoCNPJeconomico = token.substring(28, 30); 
-            String indicador = token.substring(30, 31); 
-            String codigoProduto = ""; 
-            if(indicador.equals(2)){ 
+
+            lay.setCNPJ(token.substring(0,9)); 
+            lay.setFilialPublico(token.substring(9, 13));
+            lay.setDigitoCNPJ(token.substring(13, 15)); 
+            lay.setCNPJeconomico(token.substring(15,24));
+            lay.setFilialEconomico(token.substring(24, 28));
+            lay.setDigitoCNPJeconomico(token.substring(28, 30));
+            lay.setIndicador(token.substring(30, 31)); 
+             
+            if(lay.getIndicador().equals("2")){ 
                 if(token.length() == 39){
-                    codigoProduto = token.substring(31, 39); 
-                    return ResponseEntity.ok("certo"); 
+
+                    //123456789123412123456789123412212345678 
+
+                    lay.setCodigoProduto(token.substring(31, 39)); 
+                    return ResponseEntity.ok(lay.toString()); 
                 }
                 else{
-                    return ResponseEntity.ok("errado");  
+                    return ResponseEntity.ok("Erro");  
                 }
                 
             }else{ 
                 
                 //12345678912341212345678912341212310202423102025231020262310202712345678
 
-                String dataInicio = token.substring(31, 33)+"-"+ token.substring(33, 35)+"-"+ token.substring(35, 39); 
+                lay.setDataInicio(token.substring(31, 33)+"-"+ token.substring(33, 35)+"-"+ token.substring(35, 39)); 
         
-                String dataFim = token.substring(39, 41)+"-"+ token.substring(41, 43)+"-"+ token.substring(43, 47); 
+                lay.setDataFim(token.substring(39, 41)+"-"+ token.substring(41, 43)+"-"+ token.substring(43, 47)); 
              
-                String dataAss = token.substring(47, 49)+"-"+ token.substring(49, 51)+"-"+ token.substring(51, 55); 
+                lay.setDataAss(token.substring(47, 49)+"-"+ token.substring(49, 51)+"-"+ token.substring(51, 55)); 
                
-                String dataLici = token.substring(55, 57)+"-"+ token.substring(57, 59)+"-"+ token.substring(59, 63); 
+                lay.setDataLici(token.substring(55, 57)+"-"+ token.substring(57, 59)+"-"+ token.substring(59, 63)); 
                
-                String vet [] = {validaData(dataInicio).getBody().split(",")[0],validaData(dataFim).getBody().split(",")[0],
-                    validaData(dataAss).getBody().split(",")[0],validaData(dataLici).getBody().split(",")[0]};
+                String vet [] = {validaData(lay.getDataInicio()).getBody().split(",")[0],validaData(lay.getDataFim()).getBody().split(",")[0],
+                    validaData(lay.getDataAss()).getBody().split(",")[0],validaData(lay.getDataLici()).getBody().split(",")[0]};
                 
                 int invalid = 0;    
 
@@ -381,8 +387,8 @@ public class Rotas {
                 }
  
                 if(invalid == 0){
-                    codigoProduto = token.substring(63, 71);
-                    return ResponseEntity.ok("Valida");     
+                    lay.setCodigoProduto(token.substring(63, 71));
+                    return ResponseEntity.ok(lay.toString());     
                 }else{
                     return ResponseEntity.ok("Invalida");    
                 }
@@ -393,4 +399,5 @@ public class Rotas {
         }
     }
 }
+
 
