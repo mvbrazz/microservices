@@ -14,11 +14,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-//PDF
+// PDF
 import java.io.File;
 import java.io.IOException;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpHeaders;
+
+// Redis
+import org.springframework.data.redis.core.RedisTemplate;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +33,14 @@ public class Rotas {
     //Metodos
     @Autowired
     private Metodos metodo;
+
+
+    private final RedisTemplate<String, String> redisTemplate;
+
+    @Autowired
+    public Rotas(RedisTemplate<String, String> redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
         
     // Atividade 1 (Endpoint HelloWorld)
 
@@ -105,7 +116,27 @@ public class Rotas {
             return ResponseEntity.ok("Ocorreu um erro ao ler o arquivo PDF");
         }
     }   
+    
+    // Atividade 5 - 1 (Armazenar dados Redis)
 
+    @GetMapping(value = "/armazenar/{chave}/{valor}")
+    public ResponseEntity<String>armazenarInfo(@PathVariable String chave,@PathVariable String valor){
+        try {
+            redisTemplate.opsForValue().set(chave, valor);     
+            return ResponseEntity.ok("Inserido com sucesso");
+        } catch (Exception e) {
+            return ResponseEntity.ok("Erro ao inserir");
+        }
+        
+    }
+
+
+    // Atividade 5 - 2 (Recuperar dados Redis)
+
+    @GetMapping(value = "/recuperar/{chave}")
+    public ResponseEntity<String>recuperarInfo(@PathVariable String chave){
+        return ResponseEntity.ok(redisTemplate.opsForValue().get(chave));
+    }
 
    
 
