@@ -30,7 +30,7 @@ public class Rotas {
 
     // Atividade 2 (CEP)
 
-    @GetMapping(value = "/{cep}")
+    @GetMapping(value = "endereco/{cep}")
     public ResponseEntity<Endereco>getEnd(@PathVariable String cep){
         Endereco end = metodo.getEndereco(cep);
         return ResponseEntity.ok(end);
@@ -38,12 +38,23 @@ public class Rotas {
 
     // Atividade 3 (Token JWT)
 
-    @GetMapping(value = "/token")
+    @GetMapping(value = "jwt/token")
     public ResponseEntity<String>token(){
         String token = metodo.getAuth();
 
         return ResponseEntity.ok(token);
     }
+
+    @GetMapping(value = "jwt/valida/{token}")
+    public ResponseEntity<String>validaToken(@PathVariable String token){
+        String confirmado = metodo.validaAuth(token);
+
+        return ResponseEntity.ok(confirmado);
+    }
+
+    
+
+
    
 
 }

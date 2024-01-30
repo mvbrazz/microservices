@@ -21,6 +21,8 @@ public class Metodos {
     @Autowired
     private RestTemplate restTemplate;
 
+    // Uso Api externa - VIA CEP
+
     public Endereco getEndereco(String cep){
 
         Map<String,String>variavel  = new HashMap<>();
@@ -30,10 +32,12 @@ public class Metodos {
         return end;
     }
 
+    // Criação do token JWT
+
     public String getAuth(){
         try {
-            // Tipo do algoritmo com base na palava my-secret
-            Algorithm alg = Algorithm.HMAC256("my-secret");
+            // Algoritmo com base na palava security
+            Algorithm alg = Algorithm.HMAC256("security");
             // Criando token
             String token = JWT.create()
                 .withIssuer("Auth-api")
@@ -45,6 +49,27 @@ public class Metodos {
 
         } catch (JWTCreationException exception) {
             throw new RuntimeException("Erro token", exception);
+        }
+        
+    }
+
+    // Validação do token JWT
+
+    public String validaAuth(String token){
+        try {
+            // Algoritmo com base na palava security
+            Algorithm alg = Algorithm.HMAC256("security");
+             JWT.require(alg)
+                .withIssuer("Auth-api")
+                .build()
+                .verify(token)
+                .getSubject();
+            return "Correto";
+
+                
+
+        } catch (JWTVerificationException exception) {
+            return "Incorreto";
         }
         
     }
