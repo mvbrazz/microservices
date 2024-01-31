@@ -13,12 +13,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.BufferedReader;
+
 // PDF
 import java.io.File;
-import java.io.FileInputStream;
+
 import java.io.FileOutputStream;
-import java.io.FileReader;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,18 +37,16 @@ import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor;
 import org.springframework.data.redis.core.RedisTemplate;
 
 // Feriados
-import java.util.Date;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
+
 
 import com.projeto.microservices.entidades.Lista;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestParam;
+
 
 
 @RestController
@@ -73,7 +71,6 @@ public class Rotas {
         String hello = "Hello World";
         return ResponseEntity.ok(hello);
     }
-
 
     // Atividade 2 (CEP)
 
@@ -154,14 +151,12 @@ public class Rotas {
         
     }
 
-
     // Atividade 5 - 2 (Recuperar dados Redis)
 
     @GetMapping(value = "/recuperar/{chave}")
     public ResponseEntity<String>recuperarInfo(@PathVariable String chave){
         return ResponseEntity.ok(redisTemplate.opsForValue().get(chave));
     }
-
 
     // Atividade 6 (Swagger)  http://localhost:8080/swagger-ui/index.html
 
@@ -176,30 +171,24 @@ public class Rotas {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
         dateFormat.setLenient(false);
 
-        try {
+       
+        data = data.replace('-', '/');
 
-            Date date = dateFormat.parse(data);
-            data = data.replace('-', '/');
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        LocalDate dataEnviada = LocalDate.parse(data, formatter);
+        LocalDate dataAtual = LocalDate.now();
 
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            LocalDate dataEnviada = LocalDate.parse(data, formatter);
-            LocalDate dataAtual = LocalDate.now();
-
-            if (dataEnviada.isBefore(dataAtual)) {
-                //return ResponseEntity.ok("A data enviada é anterior à data atual.");
-                return ResponseEntity.ok("Data Inválida");
-            } else if (dataEnviada.isAfter(dataAtual)) {
-                //return ResponseEntity.ok("A data enviada é posterior à data atual.");
-                return ResponseEntity.ok(data);
-            } else {
-                //return ResponseEntity.ok("A data enviada é a mesma que à data atual.");
-                return ResponseEntity.ok("Data Inválida");
-            }
-            
-        } catch (ParseException e) {
+        if (dataEnviada.isBefore(dataAtual)) {
+            //return ResponseEntity.ok("A data enviada é anterior à data atual.");
+            return ResponseEntity.ok("Data Inválida");
+        }else if (dataEnviada.isAfter(dataAtual)) {
+            //return ResponseEntity.ok("A data enviada é posterior à data atual.");
+            return ResponseEntity.ok(data);
+        }else {
+            //return ResponseEntity.ok("A data enviada é a mesma que à data atual.");
             return ResponseEntity.ok("Data Inválida");
         }
-
+            
     }
   
     // Atividade 7 - 2 - Feriados (Incluir data)
@@ -372,7 +361,7 @@ public class Rotas {
                     return ResponseEntity.ok("Erro" + aux + ": "+token.substring(0, 39));  
                 }
                 
-            }else{ 
+            }else if(token.length() == 71){ 
                 
                 //12345678912341212345678912341212310202423102025231020262310202712345678
 
@@ -402,13 +391,13 @@ public class Rotas {
                     return ResponseEntity.ok("Invalida");    
                 }
 
+            }else{
+                return ResponseEntity.ok("Tamanho incorreto");
             }
         }else{ 
             return ResponseEntity.ok("Tamanho incorreto"); 
         }
     }
-
-
 
     @GetMapping(value = "/lerArquivoWeb")
     public ResponseEntity<String> lerBlocoWeb() {
@@ -487,14 +476,12 @@ public class Rotas {
 
             List<DadosExcel> dado = new ArrayList<>();
             
-            int a = 0;
-            int b = 0;
-
-
+            int contador = 0;
+  
             //Adicionando os dados na lista
 
-            for(a = 0; a < linhas.size();a++){
-                dado.add( new DadosExcel (linhas.get(a).substring(0, 2),linhas.get(a).substring(2)));                 
+            for(contador = 0; contador < linhas.size();contador++){
+                dado.add( new DadosExcel (linhas.get(contador).substring(0, 2),linhas.get(contador).substring(2)));                 
             }
 
             try(Workbook workbook = new XSSFWorkbook()){
