@@ -4,6 +4,7 @@ package com.projeto.microservices.rotas;
 
 import org.springframework.http.ResponseEntity;
 import com.projeto.microservices.metodos.Metodos;
+import com.projeto.microservices.entidades.DadosExcel;
 import com.projeto.microservices.entidades.Endereco;
 import com.projeto.microservices.entidades.Layout;
 
@@ -12,9 +13,16 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.BufferedReader;
 // PDF
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import com.itextpdf.kernel.pdf.PdfReader;
@@ -33,9 +41,15 @@ import java.util.Date;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+
 import com.projeto.microservices.entidades.Lista;
 
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping(value = "/")
@@ -87,7 +101,7 @@ public class Rotas {
 
     // Atividade 4 - 1 (Gerar PDF)
 
-    @GetMapping("/gerar-pdf")
+    @GetMapping(value = "/gerar-pdf")
     public ResponseEntity<byte[]> generatePDF() {
         byte[] pdfContents = metodo.generatePDF();
 
@@ -105,7 +119,7 @@ public class Rotas {
 
     // Atividade 4 - 2 (Ler PDF)
 
-    @GetMapping("/ler-pdf")
+    @GetMapping(value = "/ler-pdf")
     public ResponseEntity<String> LerPDF(){
         // Caminho para o arquivo PDF que será lido
         String caminhoArquivo = "C://Users//mvbra//Downloads//documento (1).pdf";
@@ -307,7 +321,7 @@ public class Rotas {
 
     // Atividade 7 - 7 - Feriados (Listar feriados PDF)
 
-    @GetMapping("/feriado/listaPDF")
+    @GetMapping(value = "/feriado/listaPDF")
     public ResponseEntity<byte[]> generatePDFs() {
 
         // http://localhost:8080/feriado/listaPDF
@@ -393,6 +407,138 @@ public class Rotas {
             return ResponseEntity.ok("Tamanho incorreto"); 
         }
     }
+
+
+
+    @GetMapping(value = "/lerArquivoWeb")
+    public ResponseEntity<String> lerBlocoWeb() {
+
+        String caminhoDoArquivo = "C://Users//mvbra//Downloads//Arq.Importacao";
+
+        Path path = Paths.get(caminhoDoArquivo);
+
+        try {
+            byte[] dadosDoArquivo = Files.readAllBytes(path);
+
+            // Lógica para processar os dados do arquivo binário aqui
+            // Exemplo: Transformar os bytes em uma String
+            String resultado = new String(dadosDoArquivo);
+
+            // Retornar o resultado na resposta da requisição
+            return ResponseEntity.ok(resultado);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Erro ao ler o arquivo binário");
+        }
+    }
+
+    @GetMapping(value = "/importacao")
+    public ResponseEntity<String> importacaoExcel() {
+
+        String caminhoArquivo = "C://Users//mvbra//Downloads//teste.txt";
+        String caminhoExcel = "C://Users//mvbra//Downloads//exemplo_simples.xlsx";
+
+        try {
+
+            List<String> linhas = Files.readAllLines(Paths.get(caminhoArquivo));
+            
+            
+           
+            Boolean validado = true;
+
+            // Validando data
+
+            for(int i = 0; i < linhas.size();i++){
+                if(linhas.get(i).substring(0, 2).equals("01")){
+
+                    validado = validaData(linhas.get(i).substring(2)).getBody().equals("Data Inválida");
+
+                    if (validado == true){
+                        return ResponseEntity.ok("Data inválida");    
+                    }
+                }  
+            }
+            
+            // Validando codigos
+
+            for(int i = 0; i < linhas.size();i++){
+                if(linhas.get(i).substring(0,2).equals("10")){
+
+                    if (linhas.get(i).length() != 12){
+                        return ResponseEntity.ok("Codigo inválido");    
+                    }
+                }
+                 
+            }
+
+            // Validando ultima linha
+
+            for(int i = 0; i < linhas.size();i++){
+                if(linhas.get(i).substring(0, 2).equals("99")){
+
+                    if (Character.getNumericValue(linhas.get(i).charAt(linhas.get(i).length()-1)) != linhas.size()){
+                        return ResponseEntity.ok("Quantidade inválida | Linhas: " + linhas.size() + "\n Caracteres: " + linhas.get(i).charAt(linhas.get(i).length()-1));    
+                    }
+                }
+                 
+            }
+
+            //Criando Lista de dados com as linhas
+
+            List<DadosExcel> dado = new ArrayList<>();
+            
+            int a = 0;
+            int b = 0;
+
+
+            //Adicionando os dados na lista
+
+            for(a = 0; a < linhas.size();a++){
+                dado.add( new DadosExcel (linhas.get(a).substring(0, 2),linhas.get(a).substring(2)));                 
+            }
+
+            try(Workbook workbook = new XSSFWorkbook()){
+
+            
+                //Nome na planilha 
+
+                Sheet sheet = workbook.createSheet("Planilha Dados2");
+
+                // Cabeçalho do Excel
+                Row headerRow = sheet.createRow(0);
+                String[] headers = {"Tipo", "Dados"};
+                for (int i = 0; i < headers.length; i++) {
+                    Cell cell = headerRow.createCell(i);
+                    cell.setCellValue(headers[i]);
+                }
+
+                // Dados
+                int rowNum = 1;
+                for (DadosExcel dados : dado) {
+                    Row row = sheet.createRow(rowNum++);
+                    row.createCell(0).setCellValue(dados.getTipo());
+                    row.createCell(1).setCellValue(dados.getDados());
+                }
+
+                // Salvar o arquivo
+                try (FileOutputStream fileOut = new FileOutputStream(caminhoExcel)) {
+                    workbook.write(fileOut);
+                    System.out.println("Arquivo Excel criado com sucesso!");
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            
+
+            return ResponseEntity.ok("Criado com sucesso!");     
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.ok("Não foi possivel a criação do Excel");
+        }
+    } 
 }
 
 
