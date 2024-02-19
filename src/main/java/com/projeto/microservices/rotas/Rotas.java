@@ -14,11 +14,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 
+import java.io.BufferedWriter;
 // PDF
 import java.io.File;
 
 import java.io.FileOutputStream;
-
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,10 +39,12 @@ import org.springframework.data.redis.core.RedisTemplate;
 
 // Feriados
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 
 import com.projeto.microservices.entidades.Lista;
+import com.projeto.microservices.entidades.Relatorio;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -332,11 +335,13 @@ public class Rotas {
             .body(pdfContents);
     }
 
+    // Atividade 9 - Layout
+
     @GetMapping(value = "/layout/{token}")
     public ResponseEntity<String>validaLayout(@PathVariable String token){ 
 
         Layout lay = new Layout();
-
+        // Verificando se tem no minimo 31 caracteres
         if(token.length() >= 31){
 
             lay.setCNPJ(token.substring(0,9)); 
@@ -349,6 +354,7 @@ public class Rotas {
              
             if(lay.getIndicador().equals("2")){ 
  
+                // Se tiver 39, indicador 2 e sem datas
                 if(token.length() == 39){
 
                     //123456789123412123456789123412212345678 
@@ -361,7 +367,8 @@ public class Rotas {
                     return ResponseEntity.ok("Erro" + aux + ": "+token.substring(0, 39));  
                 }
                 
-            }else if(token.length() == 71){ 
+            } // Se tiver 71, indicador 1 e com datas verificadas
+            else if(token.length() == 71){ 
                 
                 //12345678912341212345678912341212310202423102025231020262310202712345678
 
@@ -402,7 +409,7 @@ public class Rotas {
     @GetMapping(value = "/lerArquivoWeb")
     public ResponseEntity<String> lerBlocoWeb() {
 
-        String caminhoDoArquivo = "C://Users//mvbra//Downloads//Arq.Importacao";
+        String caminhoDoArquivo = "C://Users//mvbra//Downloads//microservico//lerArquivoWeb//Arq.Importacao";
 
         Path path = Paths.get(caminhoDoArquivo);
 
@@ -421,11 +428,13 @@ public class Rotas {
         }
     }
 
+    // Arquivo Importação
+    
     @GetMapping(value = "/importacao")
     public ResponseEntity<String> importacaoExcel() {
 
-        String caminhoArquivo = "C://Users//mvbra//Downloads//teste.txt";
-        String caminhoExcel = "C://Users//mvbra//Downloads//exemplo_simples.xlsx";
+        String caminhoArquivo = "C://Users//mvbra//Downloads//microservico//importacao//dados.txt";
+        String caminhoExcel = "C://Users//mvbra//Downloads//microservico//importacao//dados.xlsx";
 
         try {
 
@@ -466,7 +475,7 @@ public class Rotas {
                 if(linhas.get(i).substring(0, 2).equals("99")){
 
                     if (Character.getNumericValue(linhas.get(i).charAt(linhas.get(i).length()-1)) != linhas.size()){
-                        return ResponseEntity.ok("Quantidade inválida | Linhas: " + linhas.size() + "\n Caracteres: " + linhas.get(i).charAt(linhas.get(i).length()-1));    
+                        return ResponseEntity.ok("Quantidade inválida\n Linhas: " + linhas.size() + "\n Linhas Informadas: " + linhas.get(i).charAt(linhas.get(i).length()-1));    
                     }
                 }
                  
@@ -516,16 +525,359 @@ public class Rotas {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            
 
             return ResponseEntity.ok("Criado com sucesso!");     
-
 
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.ok("Não foi possivel a criação do Excel");
         }
     } 
+
+    // Balance Line
+
+    @GetMapping(value = "/balanceLineFuncionario")
+    public ResponseEntity<String> balanceFuncionario() {
+
+        // Caminhos para ler e criar os documentos
+
+        String PrimeiroArquivo = "C://Users//mvbra//Downloads//microservico//balanceLineFuncionario//Arquivo1.txt";
+        String SegundoArquivo = "C://Users//mvbra//Downloads//microservico//balanceLineFuncionario//Arquivo2.txt";
+        String TerceiroArquivo = "C://Users//mvbra//Downloads//microservico//balanceLineFuncionario//Arquivo3.txt";
+
+        // Lista de funcionario
+        List<String> funcionarios = new ArrayList<>();
+
+        try {
+
+            // Lendo arquivos com os dados
+
+            List<String> arquivo1 = Files.readAllLines(Paths.get(PrimeiroArquivo));
+            List<String> arquivo2 = Files.readAllLines(Paths.get(SegundoArquivo));
+                                    
+            for(int i = 0; i < arquivo1.size();i++){
+                
+                String[] partes = arquivo1.get(i).split("(?=[A-Z])");
+
+                // Verificando se está faltando dados como nome ou endereço
+
+                if(partes.length == 3){
+                    funcionarios.add(arquivo1.get(i));
+                }
+
+            }
+
+            for (int i = 0; i < arquivo2.size(); i++) {
+
+                String[] partes = arquivo2.get(i).split("(?=[A-Z])");
+            
+                if (partes.length == 3) {
+
+                    boolean duplicado = false;
+            
+                    // Verificando todos os funcionarios existentes na lista de funcionarios
+
+                    for (int j = 0; j < funcionarios.size(); j++) {
+                        if (arquivo2.get(i).substring(0, 7).equals(funcionarios.get(j).substring(0, 7))) {
+                            duplicado = true;
+                            break;
+                        }
+                    }
+            
+                    // Adicionar à lista apenas se não existir um funcionario com o mesmo codigo de funcionario
+
+                    if (!duplicado) {
+                        funcionarios.add(arquivo2.get(i));
+                    }
+                }
+            }
+
+            // Ordenando a lista de funcionarios utilizando bubble sort
+
+            for (int i = 0; i < funcionarios.size(); i++) {
+
+                for(int j = i+1;j< funcionarios.size();j++){
+
+                    if(Integer.parseInt(funcionarios.get(i).substring(0, 7)) > Integer.parseInt(funcionarios.get(j).substring(0, 7))){
+                        String auxiliar = funcionarios.get(i);
+                        
+                        funcionarios.set(i, funcionarios.get(j));
+                        funcionarios.set(j, auxiliar);
+                    }
+                }
+                
+            }
+
+            return ResponseEntity.ok(metodo.criarBlocoDeNotas(TerceiroArquivo, funcionarios)); 
+               
+        } catch (Exception e) {
+
+            e.printStackTrace();
+            return ResponseEntity.ok("Não foi possivel criar o arquivo");
+            
+        }
+    } 
+
+    @GetMapping(value = "/balanceLineCliente")
+    public ResponseEntity<String> balanceCliente() {
+
+        // Caminhos para ler e criar os documentos
+
+        String PrimeiroArquivo = "C://Users//mvbra//Downloads//microservico//balanceLineCliente//mestre.txt";
+        String SegundoArquivo = "C://Users//mvbra//Downloads//microservico//balanceLineCliente//detalhe.txt";
+        String TerceiroArquivo = "C://Users//mvbra//Downloads//microservico//balanceLineCliente//mestatu.txt";
+
+        // Lista de funcionario
+        List<String> cliente = new ArrayList<>();
+        
+        try {
+
+            // Lendo arquivos com os dados
+
+            List<String> arquivo1 = Files.readAllLines(Paths.get(PrimeiroArquivo));
+            List<String> arquivo2 = Files.readAllLines(Paths.get(SegundoArquivo));
+             
+            // Adicionando mestre e verificando se tem 1 registro por cliente
+
+            for(int i = 0; i < arquivo1.size();i++){
+
+                int cont = 0;                            
+
+                if(arquivo1.get(i).split("(?=[A-Z])").length == 4){
+
+                    for(int j = 0; j < cliente.size();j++){
+                        if(arquivo1.get(i).split("(?=[A-Z])")[0].equals(cliente.get(j).split("(?=[A-Z])")[0])){
+                            cont++;
+                        }
+                    }
+                    if(cont == 0){
+                        cliente.add(arquivo1.get(i));
+                    }
+                }
+
+            }
+
+            // Dados detalhe
+            
+            List<String> frase = new ArrayList<>();
+            
+            for (int i = 0; i < arquivo2.size(); i++) {
+
+                String comparador = arquivo2.get(i).substring(0,15);
+                int cont = 0;
+                
+                for (int j = 0; j < arquivo2.size(); j++) {
+                    if (arquivo2.get(j).substring(0,15).equals(comparador)) {
+                        cont++;
+                    }
+                }
+
+                if(cont < 10){ 
+                    if (i < arquivo2.size() - 1 && !arquivo2.get(i).substring(0, 15).equals(arquivo2.get(i + 1).substring(0, 15)) || i == arquivo2.size()-1) {
+                        if(arquivo2.get(i).split("(?=[A-Z])")[3].equals("D")){
+                            frase.add(arquivo2.get(i).split("(?=[A-Z])")[0]+"S000"+(cont*2)+arquivo2.get(i).split("(?=[A-Z])")[2]+"");    
+                        }else{
+                            frase.add(arquivo2.get(i).split("(?=[A-Z])")[0]+"S000"+((cont*2)-1)+arquivo2.get(i).split("(?=[A-Z])")[2]+""); 
+                        }
+                    }
+
+                }
+                  
+            }
+
+            //Verificando se contém mestre valido
+            
+            int cont = 0;
+
+            for (int i = 0; i < frase.size(); i++) {
+
+                String elementoAtual = frase.get(i).split("(?=[A-Z])")[0];  
+
+                for (int j = 0; j < arquivo1.size(); j++) {
+                    if (elementoAtual.equals(arquivo1.get(j).split("(?=[A-Z])")[0])) {
+                        cont++; 
+                    }
+                }
+
+                
+            }
+
+            if (frase.size() != cont) {
+
+                return ResponseEntity.ok("Conteúdo sem mestre");
+
+            } else {
+
+                // Criando o arquivo mestatu
+
+                String conteudo = "----- Conteúdos atualizados -----\n\n";
+   
+                for (int i = 0; i < cliente.size(); i++) {
+                    String[] partesCliente = cliente.get(i).split("(?=[A-Z])");
+
+                    for (int j = 0; j < frase.size(); j++) {
+
+                        String[] partesFrase = frase.get(j).split("(?=[A-Z])");
+
+                        if (partesFrase[0].split("(?=[A-Z])")[0].equals(partesCliente[0].split("(?=[A-Z])")[0])) {
+                            conteudo += partesCliente[0] + partesCliente[1] + partesFrase[1] + partesFrase[2] +"\n";
+                        }
+                        
+                    }
+                }
+
+                conteudo += "\n\n----- Conteúdos antigos -----\n\n";
+
+                for (int i = 0; i < arquivo1.size(); i++) {
+                   
+                    conteudo += arquivo1.get(i) + "\n";
+                        
+                }
+
+                try {
+                    // Cria um objeto BufferedWriter para escrever no arquivo
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(TerceiroArquivo));
+    
+                    // Escreve o conteúdo no arquivo
+                    writer.write(conteudo);
+    
+                    // Fecha o BufferedWriter para garantir que todos os dados sejam gravados
+                    writer.close();
+    
+                } catch (IOException e) {
+                    System.err.println("Erro ao criar o arquivo mestatu: " + e.getMessage());
+                }
+
+                // Atualizando o campo SDANT 
+
+                ArrayList<String> ListaConteudo2 = new ArrayList<>();
+
+                for (int i = 0; i < arquivo1.size(); i++) {
+                    String[] partesArquivo1 = arquivo1.get(i).split("(?=[A-Z])");   
+                    for (int j = 0; j < frase.size(); j++) {
+                        String[] partesFrase = frase.get(j).split("(?=[A-Z])");
+    
+                        if (partesFrase[0].split("(?=[A-Z])")[0].equals(partesArquivo1[0].split("(?=[A-Z])")[0])) {
+                            ListaConteudo2.add( partesArquivo1[0] + partesArquivo1[1] + partesFrase[1] + partesFrase[2]);
+                        }
+                    }
+                }
+
+                // Verificando se já contém 
+
+                for (String elemento : arquivo1) {
+                    String[] partes = elemento.split("(?=[A-Z])");
+                    boolean encontrado = false;
+                
+                    for (String item : ListaConteudo2) {
+                        String[] partes2 = item.split("(?=[A-Z])");
+                        if (partes2[0].equals(partes[0])) {
+                            encontrado = true;
+                            break;
+                        }
+                    }
+                
+                    if (!encontrado) {
+                        ListaConteudo2.add(elemento);
+                    }
+                }
+
+                // Ordenando vetor
+                
+                Collections.sort(ListaConteudo2);
+
+                String conteudo2 = "";
+
+                for (String elemento : ListaConteudo2) {
+                    conteudo2+= elemento+"\n";
+                }
+
+                // Arquivo mestre atualizado
+
+                try {
+                    // Cria um objeto BufferedWriter para escrever no arquivo
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(PrimeiroArquivo));
+    
+                    // Escreve o conteúdo no arquivo
+                    writer.write(conteudo2);
+    
+                    // Fecha o BufferedWriter para garantir que todos os dados sejam gravados
+                    writer.close();
+    
+                } catch (IOException e) {
+                    System.err.println("Erro ao criar o arquivo mestre: " + e.getMessage());
+                }
+
+                return ResponseEntity.ok("Operação feita com sucesso");
+            }
+
+            
+        } catch (Exception e) {
+
+            e.printStackTrace();
+            return ResponseEntity.ok("Erro ao ler os arquivos."); 
+            
+        }
+    } 
+
+    // Relatório de Quebra
+    
+    @GetMapping(value = "/relatorio")
+    public ResponseEntity<String> relatorio() {
+
+        String CadFunc = "C://Users//mvbra//Downloads//microservico//relatorioQuebra//CadFunc.txt";
+        String Relato = "C://Users//mvbra//Downloads//microservico//relatorioQuebra//Relato.txt";
+        // Lista de funcionario
+        
+        List<Relatorio>  Rel = new ArrayList<>();
+
+        try {
+
+            // Lendo arquivos com os dados
+
+            List<String> funcionario = Files.readAllLines(Paths.get(CadFunc));
+            for(int i = 0; i< funcionario.size();i++){
+
+                String SalarioB = funcionario.get(i).substring(17).split("(?<=\\D)(?=\\d)", 2)[1].substring(0,5);
+                String desc = funcionario.get(i).substring(17).split("(?<=\\D)(?=\\d)", 2)[1].substring(5,9);
+
+                Relatorio r = new Relatorio(funcionario.get(i).substring(0,3),funcionario.get(i).substring(3,7),
+                                            funcionario.get(i).substring(7,10),funcionario.get(i).substring(10,17),
+                                            funcionario.get(i).substring(17).split("(?<=\\D)(?=\\d)", 2)[0],SalarioB,
+                                            funcionario.get(i).substring(17).split("(?<=\\D)(?=\\d)", 2)[1].substring(5,9),
+                                            (Integer.parseInt(SalarioB)-Integer.parseInt(desc))
+                );
+
+                Rel.add(r);  
+            }
+
+            for (int i = 0; i < Rel.size() - 1; i++) {
+                for (int j = 0; j < Rel.size() - i - 1; j++) {
+                    if (Rel.get(j).getRegionalAsInt() > Rel.get(j + 1).getRegionalAsInt() ||
+                        (Rel.get(j).getRegionalAsInt() == Rel.get(j + 1).getRegionalAsInt() && 
+                         Rel.get(j).getAgenciaAsInt() > Rel.get(j + 1).getAgenciaAsInt()) ||
+                        (Rel.get(j).getRegionalAsInt() == Rel.get(j + 1).getRegionalAsInt() && 
+                         Rel.get(j).getAgenciaAsInt() == Rel.get(j + 1).getAgenciaAsInt() &&
+                         Rel.get(j).getSecaoAsInt() > Rel.get(j + 1).getSecaoAsInt()) ||
+                        (Rel.get(j).getRegionalAsInt() == Rel.get(j + 1).getRegionalAsInt() && 
+                         Rel.get(j).getAgenciaAsInt() == Rel.get(j + 1).getAgenciaAsInt() &&
+                         Rel.get(j).getSecaoAsInt() == Rel.get(j + 1).getSecaoAsInt() &&
+                         Rel.get(j).getFuncionarioAsInt() > Rel.get(j + 1).getFuncionarioAsInt())) {
+                        // troca Rel.get(j) e Rel.get(j+1)
+                        Relatorio temp = Rel.get(j);
+                        Rel.set(j, Rel.get(j + 1));
+                        Rel.set(j + 1, temp);
+                    }
+                }
+            }
+            
+            return ResponseEntity.ok(metodo.Relatorio(Relato, Rel));
+
+        } catch (Exception e) {
+            return ResponseEntity.ok("Erro"); 
+        }
+    }
+
 }
 
 
